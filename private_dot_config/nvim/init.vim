@@ -3,7 +3,7 @@
 " ------------------------------------------------------------------------------
 
 " let g:python_host_prog = '/usr/bin/python2'
-let g:python3_host_prog = '/usr/bin/python'
+let g:python3_host_prog = '/usr/bin/python3'
 let g:pyindent_continue = 4
 let g:pyindent_nested_paren = 4
 let g:pyindent_open_paren = 4
@@ -15,7 +15,6 @@ let g:NERDCustomDelimiters = {
     \ 'c':     { 'left': '//' }
     \ }
 
-let t_Co = 16
 let g:solarized_contrast = 'high'
 let g:solarized_visibility = 'low'
 
@@ -41,6 +40,14 @@ let g:go_highlight_extra_types = 1
 
 let g:neoformat_only_msg_on_error = 1
 let g:neoformat_verbose = 0
+
+let g:neoformat_cpp_clangformat = {
+        \ 'exe': 'clang-format-10',
+        \ 'args': ['-assume-filename=' . expand('%:t')],
+        \ 'stdin': 1,
+        \ }
+let g:neoformat_enabled_cpp = ['clangformat']
+
 
 " let g:neomake_cpp_ninja_maker = {
     " \ 'exe': 'ninja',
@@ -79,24 +86,28 @@ let g:fzf_action = {
 
 call plug#begin()
     Plug '~/Code/vim-colors-solarized'
-    " Plug 'Chiel92/vim-autoformat'
+    Plug 'Shougo/deoplete.nvim'
+    Plug 'autozimu/LanguageClient-neovim', { 'branch': 'next', 'do': 'bash install.sh' }
     Plug 'bkad/CamelCaseMotion'
+    Plug 'derekwyatt/vim-fswitch'
+    Plug 'google/yapf', { 'rtp': 'plugins/vim', 'for': 'python' }
     Plug 'junegunn/fzf', { 'dir': '~/.fzf',  'do': './install' }
-    " Plug 'autozimu/LanguageClient-neovim', { 'branch': 'next', 'do': 'bash install.sh' }
+    Plug 'sbdchd/neoformat'
     Plug 'scrooloose/nerdcommenter'
     Plug 'tpope/vim-endwise'
     Plug 'tpope/vim-eunuch'
     Plug 'tpope/vim-fugitive'
+    Plug 'tpope/vim-scriptease'
     Plug 'tpope/vim-surround'
     Plug 'vim-airline/vim-airline'
     Plug 'vim-airline/vim-airline-themes'
+
+    " Plug 'lifepillar/vim-solarized8'
+    " Plug 'romainl/flattened'
+    " Plug 'marxin/neo-rtags'
+    " Plug 'Chiel92/vim-autoformat'
     " Plug 'neomake/neomake'
-    Plug 'sbdchd/neoformat'
-    Plug 'derekwyatt/vim-fswitch'
-    Plug 'google/yapf', { 'rtp': 'plugins/vim', 'for': 'python' }
     " Plug 'lyuts/vim-rtags'
-    Plug 'marxin/neo-rtags'
-    Plug 'Shougo/deoplete.nvim'
     " Plug 'SirVer/ultisnips'
     " Plug 'Vimjas/vim-python-pep8-indent'
     " Plug 'davidhalter/jedi-vim'
@@ -134,6 +145,11 @@ call camelcasemotion#CreateMotionMappings(',')
     " call dein#end()
     " call dein#save_state()
 " endif
+
+let g:LanguageClient_serverCommands = {
+  \ 'cpp': ['clangd'],
+  \ 'c':   ['clangd'],
+  \ }
 
 " ------------------------------------------------------------------------------
 " Vim settings
@@ -228,7 +244,7 @@ set dir=~/.local/share/nvim/swap
 set cursorline
 
 " Highlight column 80
-set colorcolumn=80
+set colorcolumn=100
 
 " Enable line, column number in corner
 set ruler
@@ -308,13 +324,18 @@ noremap<leader>o  :FSHere<CR>
 noremap<leader>l  :FSSplitRight<CR>
 noremap<leader>h  :set hlsearch!<CR>
 
-nnoremap <leader>rj  :call NeoRtagsFollowLocation()<CR>
-nnoremap <leader>ri  :call NeoRtagsSymbolInfo()<CR>
-nnoremap <leader>rd  :call NeoRtagsDiagnose()<CR>
-nnoremap <leader>rf  :call NeoRtagsFindReferences()<CR>
-nnoremap <leader>rn  :call NeoRtagsFindReferencesByName()<CR>
-nnoremap <leader>rp  :call NeoRtagsJumpToParent()<CR>
-nnoremap <leader>rw  :call NeoRtagsRenameSymbol()<CR>
+" nnoremap <leader>rj  :call NeoRtagsFollowLocation()<CR>
+" nnoremap <leader>ri  :call NeoRtagsSymbolInfo()<CR>
+" nnoremap <leader>rd  :call NeoRtagsDiagnose()<CR>
+" nnoremap <leader>rf  :call NeoRtagsFindReferences()<CR>
+" nnoremap <leader>rn  :call NeoRtagsFindReferencesByName()<CR>
+" nnoremap <leader>rp  :call NeoRtagsJumpToParent()<CR>
+" nnoremap <leader>rw  :call NeoRtagsRenameSymbol()<CR>
+
+nnoremap <leader>ld  :call LanguageClient#textDocument_definition()<cr>
+nnoremap <leader>lh  :call LanguageClient#textDocument_hover()<cr>
+nnoremap <leader>lr  :call LanguageClient#textDocument_references()<cr>
+nnoremap <leader>la  :call LanguageClient#textDocument_codeAction()<cr>
 
 nnoremap <leader>ff :Neoformat<CR>
 
@@ -335,8 +356,8 @@ if (has("autocmd"))
     autocmd! BufEnter *.pg  set filetype=plsql
 
     " Filetype-dependent whitespace definitions
-    autocmd! FileType xml,css,tex,json,sh      setlocal ts=2 sts=2 sw=2 expandtab
-    autocmd! FileType html,htmldjango,twig,plain,json,sql,plsql setlocal ts=2 sts=2 sw=2 expandtab indentexpr=
+    autocmd! FileType xml,xslt,css,tex,json,sh,yaml,sql          setlocal ts=2 sts=2 sw=2 expandtab
+    autocmd! FileType xml,html,htmldjango,twig,plain,json   setlocal ts=2 sts=2 sw=2 expandtab indentexpr=
     autocmd! FileType vim setlocal keywordprg=:help
     " JSONC support
     autocmd FileType json syntax match Comment +\/\/.\+$+
@@ -388,3 +409,5 @@ function! EditVimInit()
         endif
     endif
 endfunc
+
+" set guicursor=n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20
